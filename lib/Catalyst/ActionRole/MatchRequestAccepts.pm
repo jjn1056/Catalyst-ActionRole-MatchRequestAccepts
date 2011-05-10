@@ -9,9 +9,9 @@ use namespace::autoclean;
 
 requires 'attributes';
 
-around match => sub {
+around 'match', sub {
   my ($orig, $self, $ctx) = @_;
-  my @hdr_accepts = %ctx->request->headers->header('Accept');
+  my @hdr_accepts = $ctx->request->headers->header('Accept');
   my @attr_accepts =
     map { ref $_ ? @$_ : $_ } 
     $ctx->debug ? $ctx->request->query_parameters->{'http-accept'} :
@@ -57,7 +57,10 @@ to use this instead of a full on package (like L<Catalyst::Action::REST> is.)
 
 Currently the match performed is a pure equalty, no attempt to guess or infer
 matches based on similarity are done.  If you need to match several variations
-you can specify all the variations with multiple attribute declarations.
+you can specify all the variations with multiple attribute declarations.  Right
+now we don't support expression based matching, such as C<text/*>, although 
+adding such would probably not be very hard (although I don't want to make the
+logic here slow down our route matching too much).
 
 If an action consumes this role, but no C<Accept> attributes are found, the
 action will simple accept all types.
@@ -75,7 +78,7 @@ John Napiorkowski L<email:jjnapiork@cpan.org>
 
 Shout out to Florian Ragwitz <rafl@debian.org> for providing such a great
 example in L<Catalyst::ActionRole::MatchRequestMethod>.  Source code and tests
-are pretty much copied.  
+are pretty much copied from his stuff.
 
 =head1 SEE ALSO
 

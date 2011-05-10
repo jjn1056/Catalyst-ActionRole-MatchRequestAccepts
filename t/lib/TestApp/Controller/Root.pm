@@ -27,7 +27,7 @@ sub text_html : Path('foo') Accept('text/html') {
     $ctx->response->body('text_html');
 }
 
-sub text_plain_or_html : Path('bar') Accept('text/plain'') Accept('text/html') {
+sub text_plain_or_html : Path('bar') Accept('text/plain') Accept('text/html') {
     my ($self, $ctx) = @_;
     $ctx->response->body('text_plain_or_html');
 }
