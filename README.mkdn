@@ -10,15 +10,15 @@ Catalyst::ActionRole::MatchRequestAccepts - Dispatch actions based on HTTP Accep
     use namespace::autoclean;
 
     BEGIN {
-        extends 'Catalyst::Controller::ActionRole';
+      extends 'Catalyst::Controller::ActionRole';
     }
 
     __PACKAGE__->config(
-        action_roles => ['MatchRequestAccepts'],
+      action_roles => ['MatchRequestAccepts'],
     );
 
-    sub for_html : Path Accept('plain/html')        { ... }
-    sub for_json : Path Method('application/json')  { ... }
+    sub for_html : Path Accept('plain/html') { ... }
+    sub for_json : Path Method('application/json') { ... }
 
 # DESCRIPTION
 
@@ -34,7 +34,16 @@ matches based on similarity are done.  If you need to match several variations
 you can specify all the variations with multiple attribute declarations.  Right
 now we don't support expression based matching, such as `text/*`, although 
 adding such would probably not be very hard (although I don't want to make the
-logic here slow down our route matching too much).
+logic here slow down our dispatch matching too much).
+
+Please note that if you specify multiple `Accept` attributes on a single
+action, those will be matched via an OR condition and not an AND condition.  In
+other words we short circuit match the first action with at least one of the
+`Accept` values appearing in the requested HTTP headers.  I think this is 
+correct since I imagine the purpose of multiple `Accept` attributes would be
+to match several acceptable variations of a given type, not to match any of
+several unrelated types.  However if you have a use case for this please let
+me know.
 
 If an action consumes this role, but no `Accept` attributes are found, the
 action will simple accept all types.
@@ -43,6 +52,58 @@ For debugging purposes, if the [Catalyst](http://search.cpan.org/perldoc?Catalys
 override the HTTP Accept header with the `http-accept` query parameter.  This
 makes it easy to force detect in testing or in your browser.  This feature is
 NOT available when the debug flag is off.
+
+Also, as usual you can specify attributes and information in the `Controller`
+configuration:
+
+    __PACKAGE__->config(
+      action_roles => ['MatchRequestAccepts'],
+      action => {
+        our_action_json => { Path => 'json', Accept => 'JSON' },
+      });
+
+# EXAMPLE
+
+The following example uses [Catalyst](http://search.cpan.org/perldoc?Catalyst) chaining to match one of two different
+types of `Accept` headers, and to return the correct HTTP error message if
+nothing is matched correctly:
+
+    package TestApp::Controller::Chained;
+
+    use Moose;
+    use namespace::autoclean;
+
+    BEGIN {
+      extends 'Catalyst::Controller::ActionRole';
+    }
+
+    __PACKAGE__->config(
+      action_roles => ['MatchRequestAccepts'],
+    );
+
+    sub root : Chained('/') PathPrefix CaptureArgs(0) {}
+
+      sub text_html : Chained('root') PathPart('') Accept('text/html') Args(0) {
+        my ($self, $ctx) = @_;
+        $ctx->response->body('text_html');
+      }
+      
+
+      sub json : Chained('root') PathPart('') Accept('application/json') Args(0) {
+        my ($self, $ctx) = @_;
+        $ctx->response->body('json');
+      }
+
+      sub not_accepted : Chained('root') PathPart('') Args {
+        my ($self, $ctx) = @_;
+        $ctx->response->status(406);
+        $ctx->response->body('error_not_accepted');
+     }
+
+    __PACKAGE__->meta->make_immutable;
+
+In the given example, a GET request to `'/chained'` will match for `Accept` values
+of HTML and JSON, and will return a status 406 error to all other requests.
 
 # AUTHOR
 
@@ -53,6 +114,9 @@ John Napiorkowski L<email:jjnapiork@cpan.org>
 Shout out to Florian Ragwitz <rafl@debian.org> for providing such a great
 example in [Catalyst::ActionRole::MatchRequestMethod](http://search.cpan.org/perldoc?Catalyst::ActionRole::MatchRequestMethod).  Source code and tests
 are pretty much copied from his stuff.
+
+I also cargo culted a chuck of code from [Catalyst::TraitFor::Request::REST](http://search.cpan.org/perldoc?Catalyst::TraitFor::Request::REST)
+which let me parse HTTP Accept lines.
 
 # SEE ALSO
 

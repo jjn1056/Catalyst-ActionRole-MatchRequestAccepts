@@ -4,22 +4,79 @@ our $VERSION = '0.01';
 
 use 5.008008;
 use Moose::Role;
-use Perl6::Junction 'none';
+use Perl6::Junction 'all', 'any';
+use HTTP::Headers::Util ();
 use namespace::autoclean;
 
 requires 'attributes';
 
+has http_accept => (is=>'ro', required=>1, default=>'http-accept');
+
+sub _http_accept {
+  my ($self, $request) = @_;
+  return map {
+    $self->_split_accept_header($_);
+  } $request->headers->header('Accept');
+}
+
+sub _split_accept_header {
+  my ($self, $accept_header) = @_;
+
+  my %types;
+  foreach my $pair ( HTTP::Headers::Util::split_header_words($accept_header) ) {
+    my ($type) = @{$pair}[0];
+    next if $types{$type};
+    $types{$type}=1;
+  }
+  return keys %types;
+}
+
+sub _query_accept {
+  my ($self, $request) = @_;
+  my $accept = $request->query_parameters->{$self->http_accept} || undef;
+  (defined($accept)  && ref($accept)) ? @$accept : $accept;
+}
+
+sub _resolve_http_accept {
+  my ($self, $ctx) = @_;
+  if($ctx->debug) {
+    my @hdr_accepts = $self->_query_accept($ctx->req);
+    if($hdr_accepts[0]) {
+      return @hdr_accepts;
+    } else {
+      return $self->_http_accept($ctx->req);
+    }
+  } else {
+    return $self->_http_accept($ctx->req);
+  }
+}
+
+sub _resolve_accept_attr {
+  @{shift->attributes->{Accept} || []};
+}
+
 around 'match', sub {
   my ($orig, $self, $ctx) = @_;
-  my @hdr_accepts = $ctx->request->headers->header('Accept');
-  my @attr_accepts =
-    map { ref $_ ? @$_ : $_ } 
-    $ctx->debug ? $ctx->request->query_parameters->{'http-accept'} :
-    $self->attributes->{Accept} || ();
-  
-  return @hdr_accepts &&
-  (none(@attr_accepts) eq none(@hdr_accepts)) ?
-  0 : $self->$orig($ctx);
+  my @attr_accepts = $self->_resolve_accept_attr;
+  my @hdr_accepts = $self->_resolve_http_accept($ctx);
+
+  $ctx->debug && 
+  $ctx->log->_dump({
+    name => $self->name,
+    attr => \@attr_accepts,
+    hdr => \@hdr_accepts});
+
+  if(@attr_accepts) {
+    if(all(@attr_accepts) eq any(@hdr_accepts)) {
+      $ctx->log->warn('self -> orig');
+      return $self->$orig($ctx);
+    } else {
+        $ctx->log->warn('returning 0');
+      return 0;
+    }
+  } else {
+    return $self->$orig($ctx);
+  }
 };
 
 1;
@@ -36,15 +93,15 @@ Catalyst::ActionRole::MatchRequestAccepts - Dispatch actions based on HTTP Accep
     use namespace::autoclean;
 
     BEGIN {
-        extends 'Catalyst::Controller::ActionRole';
+      extends 'Catalyst::Controller::ActionRole';
     }
 
     __PACKAGE__->config(
-        action_roles => ['MatchRequestAccepts'],
+      action_roles => ['MatchRequestAccepts'],
     );
 
-    sub for_html : Path Accept('plain/html')        { ... }
-    sub for_json : Path Method('application/json')  { ... }
+    sub for_html : Path Accept('plain/html') { ... }
+    sub for_json : Path Method('application/json') { ... }
 
 =head1 DESCRIPTION
 
@@ -60,7 +117,16 @@ matches based on similarity are done.  If you need to match several variations
 you can specify all the variations with multiple attribute declarations.  Right
 now we don't support expression based matching, such as C<text/*>, although 
 adding such would probably not be very hard (although I don't want to make the
-logic here slow down our route matching too much).
+logic here slow down our dispatch matching too much).
+
+Please note that if you specify multiple C<Accept> attributes on a single
+action, those will be matched via an OR condition and not an AND condition.  In
+other words we short circuit match the first action with at least one of the
+C<Accept> values appearing in the requested HTTP headers.  I think this is 
+correct since I imagine the purpose of multiple C<Accept> attributes would be
+to match several acceptable variations of a given type, not to match any of
+several unrelated types.  However if you have a use case for this please let
+me know.
 
 If an action consumes this role, but no C<Accept> attributes are found, the
 action will simple accept all types.
@@ -69,6 +135,57 @@ For debugging purposes, if the L<Catalyst> debug flag is enabled, you can
 override the HTTP Accept header with the C<http-accept> query parameter.  This
 makes it easy to force detect in testing or in your browser.  This feature is
 NOT available when the debug flag is off.
+
+Also, as usual you can specify attributes and information in the C<Controller>
+configuration:
+
+    __PACKAGE__->config(
+      action_roles => ['MatchRequestAccepts'],
+      action => {
+        our_action_json => { Path => 'json', Accept => 'JSON' },
+      });
+
+=head1 EXAMPLE
+
+The following example uses L<Catalyst> chaining to match one of two different
+types of C<Accept> headers, and to return the correct HTTP error message if
+nothing is matched correctly:
+
+    package TestApp::Controller::Chained;
+
+    use Moose;
+    use namespace::autoclean;
+
+    BEGIN {
+      extends 'Catalyst::Controller::ActionRole';
+    }
+
+    __PACKAGE__->config(
+      action_roles => ['MatchRequestAccepts'],
+    );
+
+    sub root : Chained('/') PathPrefix CaptureArgs(0) {}
+
+      sub text_html : Chained('root') PathPart('') Accept('text/html') Args(0) {
+        my ($self, $ctx) = @_;
+        $ctx->response->body('text_html');
+      }
+      
+      sub json : Chained('root') PathPart('') Accept('application/json') Args(0) {
+        my ($self, $ctx) = @_;
+        $ctx->response->body('json');
+      }
+
+      sub not_accepted : Chained('root') PathPart('') Args {
+        my ($self, $ctx) = @_;
+        $ctx->response->status(406);
+        $ctx->response->body('error_not_accepted');
+     }
+
+    __PACKAGE__->meta->make_immutable;
+
+In the given example, a GET request to C<'/chained'> will match for C<Accept> values
+of HTML and JSON, and will return a status 406 error to all other requests.
 
 =head1 AUTHOR
 
@@ -79,6 +196,9 @@ John Napiorkowski L<email:jjnapiork@cpan.org>
 Shout out to Florian Ragwitz <rafl@debian.org> for providing such a great
 example in L<Catalyst::ActionRole::MatchRequestMethod>.  Source code and tests
 are pretty much copied from his stuff.
+
+I also cargo culted a chuck of code from L<Catalyst::TraitFor::Request::REST>
+which let me parse HTTP Accept lines.
 
 =head1 SEE ALSO
 

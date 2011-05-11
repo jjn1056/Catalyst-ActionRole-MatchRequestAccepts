@@ -22,12 +22,7 @@ sub root : Chained('/') PathPrefix CaptureArgs(0) {}
     my ($self, $ctx) = @_;
     $ctx->response->body('text_html');
   }
-
-  sub text_plain_and_html : Chained('root') PathPart('')  Accept('text/plain') Accept('text/html') Args(0) {
-    my ($self, $ctx) = @_;
-    $ctx->response->body('text_plain_and_html');
-  }
-
+  
   sub json : Chained('root') PathPart('') Accept('application/json') Args(0) {
     my ($self, $ctx) = @_;
     $ctx->response->body('json');
