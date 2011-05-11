@@ -1,6 +1,6 @@
 package Catalyst::ActionRole::MatchRequestAccepts;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use 5.008008;
 use Moose::Role;
@@ -61,10 +61,8 @@ around 'match', sub {
 
   if(@attr_accepts) {
     if(all(@attr_accepts) eq any(@hdr_accepts)) {
-      $ctx->log->warn('self -> orig');
       return $self->$orig($ctx);
     } else {
-        $ctx->log->warn('returning 0');
       return 0;
     }
   } else {
