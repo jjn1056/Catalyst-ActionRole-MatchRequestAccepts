@@ -108,14 +108,14 @@ to use this instead of a full on package (like L<Catalyst::Action::REST> is.)
 Currently the match performed is a pure equalty, no attempt to guess or infer
 matches based on similarity are done.  If you need to match several variations
 you can specify all the variations with multiple attribute declarations.  Right
-now we don't support expression based matching, such as C<text/*>, although 
+now we don't support expression based matching, such as C<text/*>, although
 adding such would probably not be very hard (although I don't want to make the
 logic here slow down our dispatch matching too much).
 
 Please note that if you specify multiple C<Accept> attributes on a single
 action, those will be matched via an OR condition and not an AND condition.  In
 other words we short circuit match the first action with at least one of the
-C<Accept> values appearing in the requested HTTP headers.  I think this is 
+C<Accept> values appearing in the requested HTTP headers.  I think this is
 correct since I imagine the purpose of multiple C<Accept> attributes would be
 to match several acceptable variations of a given type, not to match any of
 several unrelated types.  However if you have a use case for this please let
@@ -124,13 +124,13 @@ me know.
 If an action consumes this role, but no C<Accept> attributes are found, the
 action will simple accept all types.
 
-For debugging purposes, if the L<Catalyst> debug flag is enabled, you can 
+For debugging purposes, if the L<Catalyst> debug flag is enabled, you can
 override the HTTP Accept header with the C<http-accept> query parameter.  This
 makes it easy to force detect in testing or in your browser.  This feature is
 NOT available when the debug flag is off.
 
 Also, as usual you can specify attributes and information in th configuration
-of your L<Catalyst::Controller> subclass: 
+of your L<Catalyst::Controller> subclass:
 
     __PACKAGE__->config(
       action_roles => ['MatchRequestAccepts'],
@@ -159,13 +159,13 @@ nothing is matched correctly:
 
     sub root : Chained('/') PathPrefix CaptureArgs(0) {}
 
-      sub text_html 
+      sub text_html
         : Chained('root') PathPart('') Accept('text/html') Args(0)
       {
         my ($self, $ctx) = @_;
         $ctx->response->body('text_html');
       }
-      
+
       sub json
         : Chained('root') PathPart('') Accept('application/json') Args(0)
       {
@@ -207,7 +207,7 @@ L<Catalyst>, L<Catalyst::Controller::ActionRole>, L<Moose>.
 
 =head1 COPYRIGHT & LICENSE
 
-Copyright 2011, John Napiorkowski L<email:jjnapiork@cpan.org> 
+Copyright 2011, John Napiorkowski L<email:jjnapiork@cpan.org>
 
 This library is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
