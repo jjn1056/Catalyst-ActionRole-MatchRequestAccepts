@@ -1,6 +1,10 @@
 Revision history for Perl extension Catalyst::ActionRole::MatchRequestAccepts
 
+0.03    11 May 2011
+        - fixed a last moment typo that causes tests to fail
+
 0.02    11 May 2011
+        - (removed version due to ultimate brokeness)
         - Removed some debug code I accidentally left in place.
         - minor code and documentation tweaks.
 

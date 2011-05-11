@@ -1,6 +1,6 @@
 package Catalyst::ActionRole::MatchRequestAccepts;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use 5.008008;
 use Moose::Role;
@@ -22,7 +22,7 @@ sub _http_accept {
 sub _split_accept_header {
   my ($self, $accept_header) = @_;
   my %types;
-  foreach my $pair (split_header_word $accept_header) {
+  foreach my $pair (split_header_words $accept_header) {
     my ($type) = @{$pair}[0];
     next if $types{$type};
     $types{$type}=1;
