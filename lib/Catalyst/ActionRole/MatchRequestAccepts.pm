@@ -1,6 +1,6 @@
 package Catalyst::ActionRole::MatchRequestAccepts;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 use 5.008008;
 use Moose::Role;
@@ -87,12 +87,20 @@ Catalyst::ActionRole::MatchRequestAccepts - Dispatch actions based on HTTP Accep
       extends 'Catalyst::Controller::ActionRole';
     }
 
+    ## Add the ActionRole to all the Controller's actions.  You can also 
+    ## selectively add the ActionRole with the :Does action attribute or in
+    ## controller configuration.  See Catalyst::Controller::ActionRole for
+    ## more information.
+
     __PACKAGE__->config(
       action_roles => ['MatchRequestAccepts'],
     );
 
-    sub for_html : Path Accept('plain/html') { ... }
-    sub for_json : Path Method('application/json') { ... }
+    ## Match for incoming requests with HTTP Accepts: plain/html
+    sub for_html : Path('foo') Accept('plain/html') { ... }
+
+    ## Match for incoming requests with HTTP Accepts: application/json
+    sub for_json : Path('foo') Accept('application/json') { ... }
 
 =head1 DESCRIPTION
 
@@ -130,17 +138,41 @@ NOT available when the debug flag is off.
 Also, as usual you can specify attributes and information in th configuration
 of your L<Catalyst::Controller> subclass:
 
+    ## Set the 'our_action_json' action to consume this ActionRole.  In this
+    ## example GET '/json' would only match if the client request HTTP included
+    ## an Accept: application/json.
+
     __PACKAGE__->config(
       action_roles => ['MatchRequestAccepts'],
       action => {
-        our_action_json => { Path => 'json', Accept => 'JSON' },
+        our_action_json => { Path => 'json', Accept => 'application/json' },
       });
 
-=head1 EXAMPLE
+    ## GET '/foo' will dispatch to either action 'our_action_json' or action
+    ## 'our_action_html' depending on the incoming HTTP Accept.
+
+    __PACKAGE__->config(
+      action => {
+        our_action_json => {
+          Does => 'MatchRequestAccepts',
+          Path => 'foo',
+          Accept => 'application/json',
+        },
+        our_action_html => {
+          Does => 'MatchRequestAccepts',
+          Path => 'foo',
+          Accept => 'text/html',
+        },
+      });
+
+There's a functioning L<Catalyst> example application in the test directory for
+your review as well.
+
+=head1 EXAMPLE WITH CHAINED ACTIONS
 
 The following example uses L<Catalyst> chaining to match one of two different
 types of C<Accept> headers, and to return the correct HTTP error message if
-nothing is matched correctly:
+nothing is matched.  This is probably my most common use pattern.
 
     package MyApp::Web::Controller::Chained;
 

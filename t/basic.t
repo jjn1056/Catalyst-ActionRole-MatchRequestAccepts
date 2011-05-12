@@ -8,7 +8,6 @@ use HTTP::Request::Common qw/GET/;
 use lib "$FindBin::Bin/lib";
 use Catalyst::Test 'TestApp';
 
-
 SKIP: {
   skip 'Catalyst Not in Debug Mode', 4 unless TestApp->debug;
   is request(GET '/foo?http-accept=text/plain')->content, 'text_plain';
@@ -32,7 +31,4 @@ is request(GET '/chained', 'Accept' => 'text/plain')->content, 'text_plain';
 is request(GET '/chained', 'Accept' => 'text/html')->content, 'text_html';
 is request(GET '/chained', 'Accept' => 'application/json')->content, 'json';
 
-
-
 done_testing;
-
