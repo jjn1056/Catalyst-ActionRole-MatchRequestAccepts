@@ -145,7 +145,7 @@ to all other requests.
 
 # AUTHOR
 
-John Napiorkowski L<email:jjnapiork@cpan.org>
+John Napiorkowski [email:jjnapiork@cpan.org](email:jjnapiork@cpan.org)
 
 # THANKS
 
@@ -163,7 +163,7 @@ which let me parse HTTP Accept lines.
 
 # COPYRIGHT & LICENSE
 
-Copyright 2011, John Napiorkowski L<email:jjnapiork@cpan.org>
+Copyright 2011, John Napiorkowski [email:jjnapiork@cpan.org](email:jjnapiork@cpan.org)
 
 This library is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
