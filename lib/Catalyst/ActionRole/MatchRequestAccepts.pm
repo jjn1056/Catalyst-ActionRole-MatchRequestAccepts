@@ -60,7 +60,7 @@ around 'match', sub {
   my @hdr_accepts = $self->_resolve_http_accept($ctx);
 
   if(@attr_accepts) {
-    if(all(@attr_accepts) eq any(@hdr_accepts)) {
+    if(any(@attr_accepts) eq any(@hdr_accepts)) {
       return $self->$orig($ctx);
     } else {
       return 0;
