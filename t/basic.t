@@ -20,6 +20,8 @@ is request(GET '/foo', 'Accept' => 'text/plain')->content, 'text_plain';
 is request(GET '/foo', 'Accept' => 'text/html')->content, 'text_html';
 is request(GET '/foo', 'Accept' => 'application/json')->content, 'json';
 is request(GET '/text_plain_and_html', 'Accept' => ['text/html','text/plain'])->content, 'text_plain_and_html';
+is request(GET '/text_plain_and_html', 'Accept' => ['text/html'])->content, 'text_plain_and_html';
+is request(GET '/text_plain_and_html', 'Accept' => ['text/plain'])->content, 'text_plain_and_html';
 
 is(request(GET '/baz')->content, 'any');
 is(request(GET '/baz', 'Accept' => 'text/plain')->content, 'any');
