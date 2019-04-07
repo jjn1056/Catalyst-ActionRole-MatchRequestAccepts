@@ -34,6 +34,7 @@ is request(GET '/chained', 'Accept' => 'text/html')->content, 'text_html';
 is request(GET '/chained', 'Accept' => 'application/json')->content, 'json';
 
 is request(GET '/withmethods', 'Accept' => 'text/plain')->content, 'text_plain';
-isnt request(POST '/withmethods', 'Accept' => 'text/plain')->content, 'text_plain';
+is request(GET '/withmethods', 'Accept' => 'application/json')->code, 500;
+is request(POST '/withmethods', 'Accept' => 'text/plain')->code, 500;
 
 done_testing;
