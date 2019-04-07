@@ -3,7 +3,7 @@ use warnings FATAL =>'all';
 
 use FindBin;
 use Test::More;
-use HTTP::Request::Common qw/GET/;
+use HTTP::Request::Common qw/GET POST/;
 
 use lib "$FindBin::Bin/lib";
 use Catalyst::Test 'TestApp';
@@ -32,5 +32,9 @@ is request(GET '/chained')->content, 'error_not_accepted';
 is request(GET '/chained', 'Accept' => 'text/plain')->content, 'text_plain';
 is request(GET '/chained', 'Accept' => 'text/html')->content, 'text_html';
 is request(GET '/chained', 'Accept' => 'application/json')->content, 'json';
+
+is request(GET '/withmethods', 'Accept' => 'text/plain')->content, 'text_plain';
+is request(GET '/withmethods', 'Accept' => 'application/json')->code, 500;
+is request(POST '/withmethods', 'Accept' => 'text/plain')->code, 500;
 
 done_testing;
